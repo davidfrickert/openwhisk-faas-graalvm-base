@@ -22,6 +22,15 @@ public class MetricsPusher extends Thread {
                          final PrometheusMeterRegistry meterRegistry) {
         this.pushGateway = new PushGateway(config.getPushAddress());
         this.meterRegistry = meterRegistry;
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(() -> {
+                    try {
+                        pushGateway.delete(runtimeIdentifier.toString());
+                    } catch (IOException e) {
+                        log.warn("Error deleting job " + runtimeIdentifier);
+                    }
+                })
+        );
     }
 
     private void push() {
