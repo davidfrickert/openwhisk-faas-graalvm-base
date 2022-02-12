@@ -3,6 +3,8 @@ package pt.ist.photon_graal.openwhisk.conf;
 import pt.ist.photon_graal.config.function.Settings;
 
 import java.util.Optional;
+import pt.ist.photon_graal.runner.utils.management.IsolateStrategy;
+import pt.ist.photon_graal.runner.utils.management.IsolateStrategy.Strategy;
 
 public class ModuleProperties implements MetricsExportConfig {
 
@@ -39,7 +41,25 @@ public class ModuleProperties implements MetricsExportConfig {
         return Optional.ofNullable(config.getBoolean("function.static")).orElse(false);
     }
 
+    public Optional<IsolateStrategy> getIsolateStrategy() {
+        try {
+            final Strategy strategy = Strategy.valueOf(config.getProperty("function.isolate.strategy.name"));
+            final String[] args = config.getProperty("function.isolate.strategy.args").split(",");
+
+            return Optional.of(IsolateStrategy.fromEnum(strategy, args));
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
     public Settings getFunctionSettings() {
-        return new Settings(getFunctionClassFQN(), getFunctionMethod(), isFunctionStatic());
+        final Optional<IsolateStrategy> isolateStrategy = getIsolateStrategy();
+        return isolateStrategy.map(strategy -> new Settings(getFunctionClassFQN(),
+                                                            getFunctionMethod(),
+                                                            isFunctionStatic(),
+                                                            strategy))
+                              .orElseGet(() -> new Settings(getFunctionClassFQN(),
+                                                            getFunctionMethod(),
+                                                            isFunctionStatic()));
     }
 }
