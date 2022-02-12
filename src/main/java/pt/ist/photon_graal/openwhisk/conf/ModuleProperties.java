@@ -44,7 +44,9 @@ public class ModuleProperties implements MetricsExportConfig {
     public Optional<IsolateStrategy> getIsolateStrategy() {
         try {
             final Strategy strategy = Strategy.valueOf(config.getProperty("function.isolate.strategy.name"));
-            final String[] args = config.getProperty("function.isolate.strategy.args").split(",");
+            final String[] args = Optional.ofNullable(config.getProperty("function.isolate.strategy.args"))
+                                          .map(a -> a.split("s"))
+                                          .orElse(new String[0]);
 
             return Optional.of(IsolateStrategy.fromEnum(strategy, args));
         } catch (RuntimeException e) {
